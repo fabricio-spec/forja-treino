@@ -5,14 +5,13 @@ import { useStore } from '../lib/store';
 import { BG } from '../lib/images';
 import { calcPlan, mealPlan, SUBSTITUTIONS } from '../lib/nutrition';
 import { Button, Card, Hero, Label, Pill, Sheet } from '../components/ui';
-import ProfileForm from '../components/ProfileForm';
+import ProfileSheet from '../components/ProfileSheet';
 
 const MACRO_COLORS = { p: '#c6ff3d', c: '#2fb8ff', f: '#ffb02e' };
 
 export default function Nutrition() {
-  const { profile, setProfile } = useStore();
+  const { profile } = useStore();
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(profile);
   const plan = calcPlan(profile);
 
   if (!plan) return null;
@@ -26,7 +25,7 @@ export default function Nutrition() {
   return (
     <>
       <Hero image={BG.nutricao} eyebrow={plan.goal.label} title="Nutrição"
-        right={<Button size="sm" variant="ghost" className="mt-6" onClick={() => { setDraft(profile); setEditing(true); }}><Pencil size={15} /> Perfil</Button>}>
+        right={<Button size="sm" variant="ghost" className="mt-6" onClick={() => setEditing(true)}><Pencil size={15} /> Perfil</Button>}>
         <div className="mt-5 flex items-end gap-2">
           <span className="num font-display text-[72px] leading-[.85] font-extrabold text-lime">{plan.kcal.toLocaleString('pt-BR')}</span>
           <span className="text-ink-300 pb-1.5">kcal / dia</span>
@@ -107,12 +106,7 @@ export default function Nutrition() {
         <p className="text-xs text-ink-500 leading-relaxed">Estimativas pela fórmula de Mifflin-St Jeor. São um ponto de partida: ajuste conforme a evolução do peso a cada 2–3 semanas e, se possível, acompanhe com um nutricionista.</p>
       </div>
 
-      <Sheet open={editing} onClose={() => setEditing(false)} title="Seu perfil" full>
-        <div className="flex flex-col gap-5">
-          <ProfileForm value={draft} onChange={setDraft} />
-          <div className="sticky bottom-0 bg-ink-900 pt-2"><Button size="lg" className="w-full" onClick={() => { setProfile({ ...draft, onboarded: true }); setEditing(false); }}>Recalcular plano</Button></div>
-        </div>
-      </Sheet>
+      {editing && <ProfileSheet open onClose={() => setEditing(false)} />}
     </>
   );
 }

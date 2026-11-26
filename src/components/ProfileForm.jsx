@@ -15,9 +15,9 @@ export default function ProfileForm({ value: p, onChange }) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <Stepper id="pf-w" label="Peso kg" value={p.weight} step={0.5} onChange={set('weight')} />
-        <Stepper id="pf-h" label="Altura cm" value={p.height} onChange={set('height')} />
-        <Stepper id="pf-a" label="Idade" value={p.age} onChange={set('age')} />
+        <Stepper id="pf-w" compact label="Peso kg" value={p.weight} step={0.5} onChange={set('weight')} />
+        <Stepper id="pf-h" compact label="Altura cm" value={p.height} onChange={set('height')} />
+        <Stepper id="pf-a" compact label="Idade" value={p.age} onChange={set('age')} />
       </div>
       <div className="flex flex-col gap-1.5">
         <Label>Nível de atividade</Label>

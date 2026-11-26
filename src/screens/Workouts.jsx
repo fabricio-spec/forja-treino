@@ -8,10 +8,12 @@ import { buildSession, lastLoadsFrom } from '../lib/session';
 import { fmtDate, fmtKg, weekStart, DAY, circuitName } from '../lib/utils';
 import { unlockAudio, keepAwake } from '../lib/audio';
 import InstallBanner from '../components/InstallBanner';
+import ProfileSheet, { ProfileButton } from '../components/ProfileSheet';
 
 export default function Workouts({ onEdit }) {
   const { workouts, sessions, snoozes, setSnoozes, exById, exercises, upsertWorkout, setActiveSession, profile } = useStore();
   const [renew, setRenew] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const wk = weekStart(new Date());
   const thisWeek = sessions.filter((s) => new Date(s.startedAt) >= wk);
@@ -30,7 +32,7 @@ export default function Workouts({ onEdit }) {
 
   return (
     <>
-      <Hero image={BG.treinos} eyebrow={`${greet}${profile.name ? ', ' + profile.name.split(' ')[0] : ''}`} title="Meus treinos">
+      <Hero image={BG.treinos} eyebrow={`${greet}${profile.name ? ', ' + profile.name.split(' ')[0] : ''}`} title="Meus treinos" right={<ProfileButton onClick={() => setProfileOpen(true)} className="mt-1" />}>
         <div className="grid grid-cols-3 gap-2 mt-5">
           <Ring done={thisWeek.length} goal={4} />
           <Stat label="Volume" value={Math.round(weekVolume / 1000 * 10) / 10} unit="t" />
@@ -68,6 +70,7 @@ export default function Workouts({ onEdit }) {
         )}
       </div>
 
+      {profileOpen && <ProfileSheet open onClose={() => setProfileOpen(false)} />}
       <RenewSheet w={renew} onClose={() => setRenew(null)} library={exercises} exById={exById}
         onApply={(w, swaps) => {
           const map = Object.fromEntries(swaps.map((s) => [s.from.id, s.to.id]));

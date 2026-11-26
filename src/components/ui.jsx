@@ -45,17 +45,18 @@ export function Select({ label, id, children, ...rest }) {
 }
 
 /** Campo numérico com botões grandes de − / + (fácil com uma mão). */
-export function Stepper({ label, value, onChange, step = 1, min = 0, suffix, id }) {
+export function Stepper({ label, value, onChange, step = 1, min = 0, suffix, id, compact = false }) {
+  const bw = compact ? 'w-8' : 'w-11';
   const set = (n) => onChange(Math.max(min, Math.round(n * 100) / 100));
   return (
     <div className="flex flex-col gap-1.5 min-w-0">
       {label && <Label>{label}</Label>}
       <div className="flex items-center h-12 rounded-2xl bg-ink-850 border border-ink-700 overflow-hidden">
-        <button type="button" aria-label={`Diminuir ${label ?? ''}`} onClick={() => set((Number(value) || 0) - step)} className="w-11 h-full grid place-items-center text-ink-300 active:bg-ink-700"><Minus size={18} /></button>
+        <button type="button" aria-label={`Diminuir ${label ?? ''}`} onClick={() => set((Number(value) || 0) - step)} className={`${bw} shrink-0 h-full grid place-items-center text-ink-300 active:bg-ink-700`}><Minus size={compact ? 15 : 18} /></button>
         <input id={id} inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value.replace(',', '.'))} onBlur={(e) => set(Number(e.target.value) || 0)}
-          className="num flex-1 min-w-0 w-full bg-transparent text-center font-display text-2xl font-bold text-ink-100 outline-none" />
+          className={`num flex-1 min-w-0 w-full bg-transparent text-center font-display ${compact ? 'text-xl' : 'text-2xl'} font-bold text-ink-100 outline-none`} />
         {suffix && <span className="text-xs text-ink-400 -ml-1 mr-1">{suffix}</span>}
-        <button type="button" aria-label={`Aumentar ${label ?? ''}`} onClick={() => set((Number(value) || 0) + step)} className="w-11 h-full grid place-items-center text-lime active:bg-ink-700"><Plus size={18} /></button>
+        <button type="button" aria-label={`Aumentar ${label ?? ''}`} onClick={() => set((Number(value) || 0) + step)} className={`${bw} shrink-0 h-full grid place-items-center text-lime active:bg-ink-700`}><Plus size={compact ? 15 : 18} /></button>
       </div>
     </div>
   );
