@@ -11,6 +11,7 @@ import { EXERCISES, seedWorkouts, seedSessions } from './seed';
                   'triset' = circuito de 2 a 6 exercícios: Bi-set (2), Tri-set (3), Série gigante (4+)
   ─ sessions       [{ id, workoutId, workoutName, startedAt, endedAt, durationSec, volume, entries: [{ exerciseId, name, sets: [{ reps, load, done }] }] }]
   ─ activeSession  sessão em andamento (sobrevive a recarregar a página)
+  ─ diet           { mode: 'auto'|'custom', targets: { protein, carbs, fat } | null, meals: [{ id, name, time, items: [{ id, foodId, grams }] }], customFoods: [{ id, name, p, c, f }] }
   ─ snoozes        { [workoutId]: ISO data até quando o alerta de 6 meses fica adiado }
 */
 
@@ -41,12 +42,13 @@ export function StoreProvider({ children }) {
   const [sessions, setSessions] = usePersistentState('sessions', []);
   const [activeSession, setActiveSession] = usePersistentState('activeSession', null);
   const [snoozes, setSnoozes] = usePersistentState('snoozes', {});
+  const [diet, setDiet] = usePersistentState('diet', { mode: 'auto', targets: null, meals: [], customFoods: [] });
 
   const setProfile = (v) => setProfileRaw((cur) => { const n = typeof v === 'function' ? v(cur) : v; renameProfile(ACTIVE_PROFILE, n.name); return n; });
 
   const api = useMemo(() => ({
     profile, setProfile, exercises, setExercises, workouts, setWorkouts, sessions, setSessions,
-    activeSession, setActiveSession, snoozes, setSnoozes,
+    activeSession, setActiveSession, snoozes, setSnoozes, diet, setDiet,
     exById: (id) => exercises.find((e) => e.id === id),
     upsertWorkout: (w) => setWorkouts((all) => (all.some((x) => x.id === w.id) ? all.map((x) => (x.id === w.id ? w : x)) : [...all, w])),
     deleteWorkout: (id) => setWorkouts((all) => all.filter((x) => x.id !== id)),
@@ -55,7 +57,7 @@ export function StoreProvider({ children }) {
     deleteExercise: (id) => setExercises((all) => all.filter((x) => x.id !== id)),
     clearSamples: () => setSessions((all) => all.filter((s) => !s.sample)),
     resetAll: () => { clearAll(); location.reload(); },
-  }), [profile, exercises, workouts, sessions, activeSession, snoozes]);
+  }), [profile, exercises, workouts, sessions, activeSession, snoozes, diet]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

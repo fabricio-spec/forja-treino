@@ -31,24 +31,7 @@ export function calcPlan(p) {
   return { bmr: Math.round(bmr), tdee: Math.round(tdee), kcal, protein, fat, carbs, imc, goal, act, water: Math.round(w * 35) };
 }
 
-// Macros por 100 g. `unit` = exibir em unidades (peso da unidade em UNIT_G).
-const F = {
-  frango: { name: 'Peito de frango grelhado', p: 31, c: 0, f: 3.6 },
-  patinho: { name: 'Patinho moído', p: 26, c: 0, f: 7 },
-  tilapia: { name: 'Tilápia grelhada', p: 26, c: 0, f: 2.7 },
-  ovo: { name: 'Ovo inteiro', p: 12.6, c: 0.8, f: 10, unit: 'un' },
-  whey: { name: 'Whey protein', p: 80, c: 10, f: 5, unit: 'scoop (30 g)' },
-  iogurte: { name: 'Iogurte natural desnatado', p: 5.5, c: 7.5, f: 0.2 },
-  arroz: { name: 'Arroz cozido', p: 2.5, c: 28, f: 0.2 },
-  batata: { name: 'Batata-doce cozida', p: 1.4, c: 18.4, f: 0.1 },
-  aveia: { name: 'Aveia em flocos', p: 14, c: 56, f: 7 },
-  pao: { name: 'Pão integral', p: 9, c: 42, f: 3.5, unit: 'fatia(s) de 50 g' },
-  feijao: { name: 'Feijão cozido', p: 4.8, c: 13.6, f: 0.5 },
-  banana: { name: 'Banana', p: 1.3, c: 23, f: 0.3, unit: 'un média' },
-  azeite: { name: 'Azeite de oliva', p: 0, c: 0, f: 100 },
-  pasta: { name: 'Pasta de amendoim', p: 25, c: 20, f: 50 },
-  castanha: { name: 'Castanhas mistas', p: 18, c: 20, f: 55 },
-};
+import { FOODS as F } from './foods.js';
 
 export const SUBSTITUTIONS = [
   { group: 'Proteínas', items: ['100 g de frango', '110 g de tilápia', '120 g de patinho', '4 ovos', '1 scoop de whey + 1 ovo'] },
@@ -68,12 +51,11 @@ const MEALS = [
 ];
 
 const round5 = (n) => Math.max(5, Math.round(n / 5) * 5);
-const UNIT_G = { ovo: 50, whey: 30, pao: 50, banana: 120 };
 
 function portion(key, grams) {
   const f = F[key];
   if (f.unit) {
-    const per = UNIT_G[key];
+    const per = f.unitG;
     const n = Math.max(1, Math.round((grams / per) * 2) / 2);
     return { key, text: `${n.toLocaleString('pt-BR')} ${f.unit}`, g: n * per, food: f.name };
   }
@@ -89,6 +71,7 @@ function fill(sources, target, m, already = 0) {
     const per100 = F[key][m];
     let g = (left / per100) * 100;
     if (cap && i < sources.length - 1) g = Math.min(g, cap);
+    if (F[key].unitG && g < F[key].unitG * 0.75 && i > 0) return; // evita arredondar para cima uma unidade inteira
     const P = portion(key, g);
     out.push(P);
     left -= (P.g * per100) / 100;
@@ -101,12 +84,14 @@ const sum = (items, m) => items.reduce((t, it) => t + (it.g * F[it.key][m]) / 10
 export function mealPlan(plan) {
   return MEALS.map((m) => {
     const tp = plan.protein * m.share, tc = plan.carbs * m.share, tf = plan.fat * m.share;
-    const prot = fill(m.P, tp, 'p');
+    // carboidratos primeiro; a proteína que eles trazem é descontada da meta de proteína
+    const carb0 = fill(m.C, tc, 'c');
+    const prot = fill(m.P, tp, 'p', sum(carb0, 'p'));
     const carb = fill(m.C, tc, 'c', sum(prot, 'c'));
     const items = [...prot, ...carb];
     if (m.f) {
       const g = Math.max(0, tf - sum(items, 'f')) / (F[m.f].f / 100);
-      if (g >= 4) items.push({ text: `${Math.round(g)} g`, food: F[m.f].name });
+      if (g >= 4) items.push({ key: m.f, text: `${Math.round(g)} g`, g: Math.round(g), food: F[m.f].name });
     }
     return { ...m, items, kcal: Math.round(plan.kcal * m.share), macros: { p: Math.round(tp), c: Math.round(tc), f: Math.round(tf) } };
   });
