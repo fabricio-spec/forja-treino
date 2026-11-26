@@ -43,5 +43,20 @@ export const MOTION_IDS = {
   'pallof': '9pa4H5m',               // band horizontal pallof press
 };
 
-export const motionGif = (exerciseId) => (MOTION_IDS[exerciseId] ? `${CDN}${MOTION_IDS[exerciseId]}.gif` : null);
+export const edbId = (exerciseId) => MOTION_IDS[exerciseId] ?? (exerciseId?.startsWith?.('edb-') ? exerciseId.slice(4) : null);
+export const motionGif = (exerciseId) => { const id = edbId(exerciseId); return id ? `${CDN}${id}.gif` : null; };
+
+// Instruções (em inglês) buscadas na hora, só em memória: os termos não permitem guardar o conteúdo.
+const memo = new Map();
+export function fetchInstructions(exerciseId) {
+  const id = edbId(exerciseId);
+  if (!id) return Promise.resolve(null);
+  if (!memo.has(id)) {
+    memo.set(id, fetch(`https://oss.exercisedb.dev/api/v1/exercises/${id}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((j) => ({ steps: (j.data?.instructions || []).map((s) => s.replace(/^Step:\s*\d+\s*/i, '')), target: j.data?.targetMuscles || [], secondary: j.data?.secondaryMuscles || [] }))
+      .catch((e) => { memo.delete(id); throw e; }));
+  }
+  return memo.get(id);
+}
 export const MOTION_CREDIT = { text: 'Animação: ExerciseDB por AscendAPI', url: 'https://ascendapi.com' };

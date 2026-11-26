@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
-import { ChevronRight, Link2, ListPlus, Plus, Search, Trash2, Youtube } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Link2, ListPlus, Plus, Search, Trash2 } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { GROUPS } from '../lib/seed';
 import { BG } from '../lib/images';
 import { Button, Field, Hero, Label, Pill, Select, Sheet } from '../components/ui';
 import YouTubeEmbed from '../components/YouTubeEmbed';
-import { demoFrames } from '../lib/demos';
+import { motionGif, fetchInstructions, MOTION_CREDIT } from '../lib/motion';
+import { filterExercises, equipmentOf } from '../lib/exsearch';
+import { ExerciseThumb, FilterChips } from '../components/ExerciseFilters';
 import { uid, youtubeId, isValidMediaUrl } from '../lib/utils';
 import { toast } from '../lib/toast';
 
@@ -16,12 +18,11 @@ export default function Library({ onNewWorkoutWith, onEdit }) {
   const [open, setOpen] = useState(null);
   const [creating, setCreating] = useState(false);
 
-  const list = useMemo(() => {
-    const n = q.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return exercises.filter((e) => (group === 'Todos' || e.group === group) && (!n || e.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(n)));
-  }, [exercises, q, group]);
+  const [equip, setEquip] = useState('Todos');
+  const [limit, setLimit] = useState(40);
+  const list = useMemo(() => filterExercises(exercises, { q, group, equip }), [exercises, q, group, equip]);
+  useEffect(() => setLimit(40), [q, group, equip]);
 
-  const byGroup = GROUPS.map((g) => [g, list.filter((e) => e.group === g)]).filter(([, l]) => l.length);
   const current = open && exercises.find((e) => e.id === open);
 
   return (
@@ -35,36 +36,30 @@ export default function Library({ onNewWorkoutWith, onEdit }) {
       </Hero>
 
       <div className="sticky z-30 bg-ink-950/95 backdrop-blur border-b border-ink-850" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-3">
-          {['Todos', ...GROUPS].map((g) => (
-            <button key={g} onClick={() => setGroup(g)} className={`shrink-0 h-9 px-4 rounded-full text-sm font-medium border transition ${group === g ? 'bg-lime text-ink-950 border-lime' : 'border-ink-700 text-ink-300'}`}>{g}</button>
-          ))}
-        </div>
+        <FilterChips group={group} setGroup={setGroup} equip={equip} setEquip={setEquip} className="px-4 py-2" />
       </div>
 
-      <div className="px-4 pt-4 flex flex-col gap-6">
-        {byGroup.map(([g, l]) => (
-          <section key={g} className="flex flex-col gap-2">
-            <Label>{g} · {l.length}</Label>
-            <ul className="rounded-3xl border border-ink-800 bg-ink-900 divide-y divide-ink-800 overflow-hidden">
-              {l.map((e) => (
-                <li key={e.id}>
-                  <button onClick={() => setOpen(e.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-ink-850">
-                    {demoFrames(e.id) ? <img src={demoFrames(e.id)[0]} alt="" loading="lazy" className="w-14 h-11 shrink-0 rounded-xl object-cover bg-white" />
-                      : <span className={`w-14 h-11 shrink-0 rounded-xl grid place-items-center ${isValidMediaUrl(e.videoUrl) ? 'bg-lime-soft text-lime' : 'bg-ink-800 text-ink-500'}`}><Youtube size={20} /></span>}
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-medium text-ink-100 truncate">{e.name}</span>
-                      <span className="block text-xs text-ink-400 truncate">{e.instructions}</span>
-                    </span>
-                    {e.custom && <Pill tone="lime">Seu</Pill>}
-                    <ChevronRight size={18} className="text-ink-500 shrink-0" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-        {!list.length && <p className="text-center text-ink-400 py-10">Nenhum exercício encontrado.</p>}
+      <div className="px-4 pt-3 flex flex-col gap-3">
+        <p className="text-xs text-ink-400" aria-live="polite">{list.length === exercises.length ? `${list.length} exercícios` : `${list.length} de ${exercises.length}`} · toque para ver a demonstração</p>
+        {!!list.length && (
+          <ul className="rounded-3xl border border-ink-800 bg-ink-900 divide-y divide-ink-800 overflow-hidden">
+            {list.slice(0, limit).map((e) => (
+              <li key={e.id}>
+                <button onClick={() => setOpen(e.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-ink-850">
+                  <ExerciseThumb ex={e} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-ink-100 truncate">{e.name}</span>
+                    <span className="block text-xs text-ink-400 truncate">{e.group} · {equipmentOf(e)}</span>
+                  </span>
+                  {e.custom && <Pill tone="lime">Seu</Pill>}
+                  <ChevronRight size={18} className="text-ink-500 shrink-0" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {list.length > limit && <Button variant="ghost" onClick={() => setLimit((n) => n + 60)}>Mostrar mais ({list.length - limit} restantes)</Button>}
+        {!list.length && <p className="text-center text-ink-400 py-10">Nenhum exercício encontrado. Tente outra palavra (vale em inglês também) ou limpe os filtros.</p>}
       </div>
 
       <Sheet open={!!current} onClose={() => setOpen(null)} title={current?.name ?? ''}>
@@ -87,18 +82,43 @@ function ExerciseDetail({ ex, onSave, onDelete }) {
   const ok = !url || isValidMediaUrl(url);
   return (
     <div className="flex flex-col gap-4">
-      <Pill className="self-start">{ex.group}</Pill>
+      <div className="flex flex-wrap gap-1.5"><Pill>{ex.group}</Pill><Pill>{equipmentOf(ex)}</Pill></div>
+      {ex.en && <p className="text-xs text-ink-500 -mt-2">Nome original: {ex.en}</p>}
       <YouTubeEmbed url={ex.videoUrl} title={ex.name} exerciseId={ex.id} />
-      <div>
-        <Label>Como executar</Label>
-        <p className="text-ink-200 mt-1 leading-relaxed">{ex.instructions}</p>
-      </div>
+      <Instructions ex={ex} />
       <div className="flex flex-col gap-2">
         <Field id={`yt-${ex.id}`} label="Link do vídeo ou GIF (YouTube, Shorts ou .gif)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://youtube.com/shorts/..." inputMode="url" />
         {!ok && <span className="text-xs text-danger">Link não reconhecido. Use um link do YouTube (youtube.com, youtu.be, /shorts/) ou o endereço direto de um GIF/vídeo (.gif, .mp4).</span>}
         <Button variant="outline" disabled={!ok || url === (ex.videoUrl || '')} onClick={() => onSave({ ...ex, videoUrl: url.trim() })}><Link2 size={16} /> {url ? 'Fixar vídeo' : 'Remover vídeo'}</Button>
       </div>
       {ex.custom && <Button variant="danger" onClick={onDelete}><Trash2 size={16} /> Excluir exercício</Button>}
+    </div>
+  );
+}
+
+function Instructions({ ex }) {
+  const [st, setSt] = useState({ loading: !ex.instructions && !!motionGif(ex.id) });
+  useEffect(() => {
+    if (ex.instructions || !motionGif(ex.id)) return;
+    let alive = true;
+    setSt({ loading: true });
+    fetchInstructions(ex.id).then((d) => alive && setSt({ d }), () => alive && setSt({ err: true }));
+    return () => { alive = false; };
+  }, [ex.id, ex.instructions]);
+  if (ex.instructions) return (
+    <div><Label>Como executar</Label><p className="text-ink-200 mt-1 leading-relaxed">{ex.instructions}</p></div>
+  );
+  if (!motionGif(ex.id)) return null;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>Como executar (em inglês, da ExerciseDB)</Label>
+      {st.loading && <p className="text-sm text-ink-400">Carregando instruções…</p>}
+      {st.err && <p className="text-sm text-ink-400">Não deu para carregar as instruções agora (sem internet ou limite de acessos). Tente de novo mais tarde.</p>}
+      {st.d && <>
+        {!!st.d.target.length && <p className="text-xs text-ink-400">Músculos: {[...st.d.target, ...st.d.secondary].join(', ')}</p>}
+        <ol className="list-decimal pl-5 text-ink-200 text-sm leading-relaxed flex flex-col gap-1">{st.d.steps.map((t, i) => <li key={i}>{t}</li>)}</ol>
+        <a href={MOTION_CREDIT.url} target="_blank" rel="noreferrer" className="text-[10px] text-ink-500 underline underline-offset-2 self-end">Fonte: ExerciseDB por AscendAPI</a>
+      </>}
     </div>
   );
 }

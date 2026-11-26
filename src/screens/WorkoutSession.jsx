@@ -6,6 +6,7 @@ import { Button, Label, Pill, Sheet, Stepper } from '../components/ui';
 import YouTubeEmbed from '../components/YouTubeEmbed';
 import DemoPlayer from '../components/DemoPlayer';
 import { demoFrames } from '../lib/demos';
+import { motionGif } from '../lib/motion';
 import { fmtClock, fmtDuration, fmtKg, sessionVolume, circuitName } from '../lib/utils';
 import { beep, vibrate, keepAwake, unlockAudio } from '../lib/audio';
 import { useBackClose } from '../lib/nav';
@@ -150,7 +151,7 @@ export default function WorkoutSession() {
                   <p className="text-sm text-ink-400 mt-1.5">Meta: {entry.target.reps} reps{entry.target.load ? ` · ${entry.target.load} kg` : ''}</p>
                 </div>
                 <button onClick={() => setVideo(ex)} aria-label="Ver demonstração do exercício" className="relative w-20 h-16 shrink-0 rounded-2xl overflow-hidden bg-ink-800 border border-ink-700 grid place-items-center text-lime">
-                  {demoFrames(ex?.id) ? <><span className="absolute inset-0 bg-white"><DemoPlayer exerciseId={ex.id} title={entry.name} compact /></span><span className="absolute right-1 bottom-1 w-6 h-6 rounded-full bg-ink-950/85 grid place-items-center"><PlayCircle size={14} /></span></> : <PlayCircle size={24} />}
+                  {(demoFrames(ex?.id) || motionGif(ex?.id)) ? <><span className="absolute inset-0 bg-white"><DemoPlayer exerciseId={ex.id} title={entry.name} compact /></span><span className="absolute right-1 bottom-1 w-6 h-6 rounded-full bg-ink-950/85 grid place-items-center"><PlayCircle size={14} /></span></> : <PlayCircle size={24} />}
                 </button>
               </div>
 

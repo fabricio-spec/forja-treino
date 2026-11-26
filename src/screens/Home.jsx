@@ -45,7 +45,7 @@ export default function Home({ onEdit }) {
         </div>
       </Hero>
 
-      <div className="px-4 flex flex-col gap-4 -mt-1">
+      <div className="px-4 pt-2 flex flex-col gap-4">
         <InstallBanner />
 
         {alerts.map((w) => (

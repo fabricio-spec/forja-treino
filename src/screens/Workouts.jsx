@@ -36,7 +36,7 @@ export default function Workouts({ onEdit }) {
     <>
       <Hero image={BG.treinos} eyebrow={`${workouts.length} ficha${workouts.length === 1 ? '' : 's'}`} title="Meus treinos" right={<ProfileButton onClick={() => setProfileOpen(true)} className="mt-1" />} />
 
-      <div className="px-4 flex flex-col gap-4 -mt-1">
+      <div className="px-4 pt-2 flex flex-col gap-4">
         {alerts.map(({ w, st }) => (
           <button key={w.id} onClick={() => setRenew(w)} className="text-left rounded-3xl border border-warn/50 bg-gradient-to-br from-warn/20 to-ink-900 p-4 flex gap-3 items-start">
             <span className="w-11 h-11 shrink-0 rounded-2xl bg-warn/20 text-warn grid place-items-center"><TriangleAlert size={22} /></span>

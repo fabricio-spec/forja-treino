@@ -1,6 +1,6 @@
 import { DAY, uid } from './utils';
 
-export const GROUPS = ['Peito', 'Costas', 'Pernas', 'Ombros', 'Braços', 'Core'];
+export const GROUPS = ['Peito', 'Costas', 'Pernas', 'Ombros', 'Braços', 'Core', 'Cardio', 'Alongamento'];
 
 // videoUrl vazio = mostra botão "Buscar no YouTube" e campo para fixar um link próprio.
 const ex = (id, name, group, instructions, videoUrl = '') => ({ id, name, group, instructions, videoUrl, custom: false });

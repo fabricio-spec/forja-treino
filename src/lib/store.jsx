@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo } from 'react';
 import { usePersistentState, clearAll, load, save, SCHEMA_VERSION, ACTIVE_PROFILE, renameProfile } from './storage';
 import { EXERCISES, seedWorkouts, seedSessions, isSampleWorkout } from './seed';
 import { uid } from './utils';
+import { CATALOG } from './catalog';
 
 /*
   Arquitetura de dados (localStorage, prefixo "forja:")
@@ -38,7 +39,13 @@ const Ctx = createContext(null);
 
 export function StoreProvider({ children }) {
   const [profile, setProfileRaw] = usePersistentState('profile', { name: '', sex: 'M', weight: 78, height: 178, age: 28, activity: 'moderado', goal: 'hipertrofia', onboarded: false });
-  const [exercises, setExercises] = usePersistentState('exercises', EXERCISES);
+  const [myExercises, setExercises] = usePersistentState('exercises', EXERCISES);
+  // Biblioteca = exercícios salvos neste perfil (35 base + criados/editados) + catálogo ExerciseDB (só leitura, não ocupa o armazenamento).
+  const exercises = useMemo(() => {
+    const own = new Set(myExercises.map((e) => e.id));
+    return [...myExercises, ...CATALOG.filter((c) => !own.has(c.id))];
+  }, [myExercises]);
+  const exMap = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
   const [workouts, setWorkouts] = usePersistentState('workouts', seedWorkouts);
   const [sessions, setSessions] = usePersistentState('sessions', []);
   const [activeSession, setActiveSession] = usePersistentState('activeSession', null);
@@ -50,17 +57,17 @@ export function StoreProvider({ children }) {
   const api = useMemo(() => ({
     profile, setProfile, exercises, setExercises, workouts, setWorkouts, sessions, setSessions,
     activeSession, setActiveSession, snoozes, setSnoozes, diet, setDiet,
-    exById: (id) => exercises.find((e) => e.id === id),
+    exById: (id) => exMap.get(id),
     upsertWorkout: (w) => setWorkouts((all) => (all.some((x) => x.id === w.id) ? all.map((x) => (x.id === w.id ? w : x)) : [...all, w])),
     deleteWorkout: (id) => setWorkouts((all) => all.filter((x) => x.id !== id)),
     addExercise: (e) => setExercises((all) => [...all, e]),
-    updateExercise: (e) => setExercises((all) => all.map((x) => (x.id === e.id ? e : x))),
+    updateExercise: (e) => setExercises((all) => (all.some((x) => x.id === e.id) ? all.map((x) => (x.id === e.id ? e : x)) : [...all, e])),
     deleteExercise: (id) => setExercises((all) => all.filter((x) => x.id !== id)),
     clearSamples: () => setSessions((all) => all.filter((s) => !s.sample)),
     removeSampleWorkouts: () => { setWorkouts((all) => all.filter((w) => !isSampleWorkout(w))); setSessions((all) => all.filter((s) => !s.sample)); },
     duplicateWorkout: (w) => { const copy = { ...structuredClone(w), id: uid('w'), name: `${w.name} (cópia)`, sample: false, createdAt: new Date().toISOString(), blocks: w.blocks.map((b) => ({ ...structuredClone(b), id: uid('blk') })) }; setWorkouts((all) => [...all, copy]); return copy.id; },
     resetAll: () => { clearAll(); location.reload(); },
-  }), [profile, exercises, workouts, sessions, activeSession, snoozes, diet]);
+  }), [profile, exercises, exMap, workouts, sessions, activeSession, snoozes, diet]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

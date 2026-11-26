@@ -21,7 +21,11 @@ export default function DemoPlayer({ exerciseId, title, compact = false }) {
     const t = setInterval(() => setI((x) => 1 - x), 1100);
     return () => clearInterval(t);
   }, [useGif, frames, playing]);
-  if (!useGif && !frames) return null;
+  if (!useGif && !frames) {
+    if (!gif) return null;
+    if (compact) return <span className="block w-full h-full bg-ink-800" />;
+    return <div className="rounded-2xl border border-dashed border-ink-600 bg-ink-850 p-5 text-center text-sm text-ink-400">Animação indisponível agora (sem internet?). Abra de novo quando estiver conectado.</div>;
+  }
 
   if (compact) return (
     <span className="relative block w-full h-full overflow-hidden bg-white">
