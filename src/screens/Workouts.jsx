@@ -7,6 +7,7 @@ import { periodStatus, swapSuggestions, STIMULUS_TIPS, PERIOD_DAYS } from '../li
 import { buildSession, lastLoadsFrom } from '../lib/session';
 import { fmtDate, fmtKg, weekStart, DAY, circuitName } from '../lib/utils';
 import { unlockAudio, keepAwake } from '../lib/audio';
+import InstallBanner from '../components/InstallBanner';
 
 export default function Workouts({ onEdit }) {
   const { workouts, sessions, snoozes, setSnoozes, exById, exercises, upsertWorkout, setActiveSession, profile } = useStore();
@@ -38,6 +39,7 @@ export default function Workouts({ onEdit }) {
       </Hero>
 
       <div className="px-4 flex flex-col gap-4 -mt-1">
+        <InstallBanner />
         {alerts.map(({ w, st }) => (
           <button key={w.id} onClick={() => setRenew(w)} className="text-left rounded-3xl border border-warn/50 bg-gradient-to-br from-warn/20 to-ink-900 p-4 flex gap-3 items-start">
             <span className="w-11 h-11 shrink-0 rounded-2xl bg-warn/20 text-warn grid place-items-center"><TriangleAlert size={22} /></span>
