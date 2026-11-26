@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, Hammer, LayoutList } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { BG } from '../lib/images';
-import { Button, Label } from '../components/ui';
+import { Button, Label, NavButtons } from '../components/ui';
 import ProfileForm from '../components/ProfileForm';
 
 export default function Onboarding({ onDone }) {
@@ -27,7 +27,8 @@ export default function Onboarding({ onDone }) {
 
   if (step === 2) return (
     <div className="min-h-full bg-ink-950">
-      <div className="max-w-lg mx-auto px-5 pt-8 pb-10 flex flex-col gap-5">
+      <div className="max-w-lg mx-auto px-5 pt-5 pb-10 flex flex-col gap-5">
+        <NavButtons onBack={() => setStep(1)} />
         <div>
           <Label className="text-lime">Seus treinos</Label>
           <h1 className="font-display text-4xl font-extrabold uppercase mt-1">Como quer começar?</h1>
@@ -53,7 +54,8 @@ export default function Onboarding({ onDone }) {
 
   return (
     <div className="min-h-full bg-ink-950">
-      <div className="max-w-lg mx-auto px-5 pt-8 pb-10 flex flex-col gap-6">
+      <div className="max-w-lg mx-auto px-5 pt-5 pb-10 flex flex-col gap-6">
+        <NavButtons onBack={() => setStep(0)} />
         <div>
           <Label className="text-lime">Seu perfil</Label>
           <h1 className="font-display text-4xl font-extrabold uppercase mt-1">Vamos calcular sua dieta</h1>

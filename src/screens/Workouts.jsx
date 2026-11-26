@@ -8,7 +8,6 @@ import { buildSession, lastLoadsFrom } from '../lib/session';
 import { isSampleWorkout } from '../lib/seed';
 import { fmtDate, fmtKg, weekStart, DAY, circuitName } from '../lib/utils';
 import { unlockAudio, keepAwake } from '../lib/audio';
-import InstallBanner from '../components/InstallBanner';
 import ProfileSheet, { ProfileButton } from '../components/ProfileSheet';
 
 export default function Workouts({ onEdit }) {
@@ -35,16 +34,9 @@ export default function Workouts({ onEdit }) {
 
   return (
     <>
-      <Hero image={BG.treinos} eyebrow={`${greet}${profile.name ? ', ' + profile.name.split(' ')[0] : ''}`} title="Meus treinos" right={<ProfileButton onClick={() => setProfileOpen(true)} className="mt-1" />}>
-        <div className="grid grid-cols-3 gap-2 mt-5">
-          <Ring done={thisWeek.length} goal={4} />
-          <Stat label="Volume" value={Math.round(weekVolume / 1000 * 10) / 10} unit="t" />
-          <Stat label="Sequência" value={streak} unit={streak === 1 ? 'semana' : 'semanas'} icon={<Flame size={14} className="text-warn" />} />
-        </div>
-      </Hero>
+      <Hero image={BG.treinos} eyebrow={`${workouts.length} ficha${workouts.length === 1 ? '' : 's'}`} title="Meus treinos" right={<ProfileButton onClick={() => setProfileOpen(true)} className="mt-1" />} />
 
       <div className="px-4 flex flex-col gap-4 -mt-1">
-        <InstallBanner />
         {alerts.map(({ w, st }) => (
           <button key={w.id} onClick={() => setRenew(w)} className="text-left rounded-3xl border border-warn/50 bg-gradient-to-br from-warn/20 to-ink-900 p-4 flex gap-3 items-start">
             <span className="w-11 h-11 shrink-0 rounded-2xl bg-warn/20 text-warn grid place-items-center"><TriangleAlert size={22} /></span>
@@ -102,7 +94,7 @@ export default function Workouts({ onEdit }) {
   );
 }
 
-function Ring({ done, goal }) {
+export function Ring({ done, goal }) {
   const R = 20, C = 2 * Math.PI * R, f = Math.min(1, done / goal);
   return (
     <div className="rounded-2xl bg-ink-950/60 border border-ink-700/60 backdrop-blur px-2.5 py-2.5 flex items-center gap-2">
@@ -118,7 +110,7 @@ function Ring({ done, goal }) {
   );
 }
 
-function Stat({ label, value, unit, icon }) {
+export function Stat({ label, value, unit, icon }) {
   return (
     <div className="rounded-2xl bg-ink-950/60 border border-ink-700/60 backdrop-blur px-3 py-2.5">
       <Label className="flex items-center gap-1">{icon}{label}</Label>

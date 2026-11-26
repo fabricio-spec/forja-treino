@@ -1,4 +1,5 @@
-import { X, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Minus, Plus } from 'lucide-react';
+import { goBack, useBackClose } from '../lib/nav';
 import { useEffect } from 'react';
 
 export function Button({ variant = 'primary', size = 'md', className = '', children, ...rest }) {
@@ -63,6 +64,7 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, suffix, id,
 }
 
 export function Sheet({ open, onClose, title, children, full = false }) {
+  useBackClose(open, onClose);
   useEffect(() => {
     if (!open) return;
     const k = (e) => e.key === 'Escape' && onClose?.();
@@ -72,12 +74,13 @@ export function Sheet({ open, onClose, title, children, full = false }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <button aria-label="Fechar" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <button aria-label="Fechar" tabIndex={-1} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className={`rise relative w-full max-w-lg bg-ink-900 border-t border-x border-ink-700 rounded-t-[28px] flex flex-col ${full ? 'h-[94dvh]' : 'max-h-[88dvh]'}`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
-          <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-ink-100 truncate">{title}</h2>
-          <button onClick={onClose} aria-label="Fechar" className="w-10 h-10 shrink-0 rounded-full bg-ink-800 grid place-items-center text-ink-300"><X size={20} /></button>
+        <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+          <button onClick={onClose} aria-label="Voltar" className="h-10 pl-2.5 pr-3.5 shrink-0 rounded-full bg-ink-800 inline-flex items-center gap-1 text-sm font-medium text-ink-200"><ArrowLeft size={18} /> Voltar</button>
+          <h2 className="flex-1 min-w-0 font-display text-xl font-bold uppercase tracking-wide text-ink-100 truncate text-center">{title}</h2>
+          <span className="w-[86px] shrink-0" aria-hidden="true" />
         </div>
         <div className="overflow-y-auto px-5 pb-6 flex-1">{children}</div>
       </div>
@@ -85,14 +88,24 @@ export function Sheet({ open, onClose, title, children, full = false }) {
   );
 }
 
+/** Botão Voltar no topo das telas (o Início fica na barra inferior). */
+export function NavButtons({ className = '', onBack = goBack }) {
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <button onClick={onBack} className="h-10 pl-2.5 pr-3.5 rounded-full bg-ink-950/70 border border-ink-700 backdrop-blur inline-flex items-center gap-1 text-sm font-medium text-ink-100"><ArrowLeft size={18} /> Voltar</button>
+    </div>
+  );
+}
+
 /** Cabeçalho com foto escura de fundo. */
-export function Hero({ image, eyebrow, title, children, right }) {
+export function Hero({ image, eyebrow, title, children, right, home = false }) {
   return (
     <header className="relative overflow-hidden" style={{ marginTop: 'calc(-1 * env(safe-area-inset-top, 0px))' }}>
       <img src={image} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover object-center opacity-90" />
       <div className="absolute inset-0 bg-gradient-to-b from-ink-950/30 via-ink-950/55 to-ink-950" />
       <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_100%_0%,#c6ff3d22,transparent_60%)]" />
-      <div className="relative px-5 pb-6" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2.25rem)' }}>
+      <div className="relative px-5 pb-6" style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${home ? '2.25rem' : '1rem'})` }}>
+        {!home && <NavButtons className="mb-4" />}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {eyebrow && <Label className="text-lime/90">{eyebrow}</Label>}

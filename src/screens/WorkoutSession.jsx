@@ -8,6 +8,8 @@ import DemoPlayer from '../components/DemoPlayer';
 import { demoFrames } from '../lib/demos';
 import { fmtClock, fmtDuration, fmtKg, sessionVolume, circuitName } from '../lib/utils';
 import { beep, vibrate, keepAwake, unlockAudio } from '../lib/audio';
+import { useBackClose } from '../lib/nav';
+import { ArrowLeft } from 'lucide-react';
 
 function useNow(ms = 250) {
   const [now, setNow] = useState(Date.now());
@@ -23,6 +25,8 @@ export default function WorkoutSession() {
   const [summary, setSummary] = useState(null);
   const [restDone, setRestDone] = useState(false);
   const firedRef = useRef(null);
+  // Voltar (botão do app ou do Android) durante o treino pergunta se quer finalizar.
+  useBackClose(!!s && !summary && !finishing && !video, () => setFinishing(true));
 
   const update = (fn) => setActiveSession((cur) => (cur ? fn(structuredClone(cur)) : cur));
 
@@ -95,7 +99,10 @@ export default function WorkoutSession() {
       <div className="relative max-w-lg w-full mx-auto flex-1 flex flex-col px-4 pt-4 pb-6 gap-4">
         {/* Barra superior: cronômetro geral */}
         <div className="flex items-center justify-between gap-3">
-          <button onClick={() => setFinishing(true)} className="h-11 px-3 rounded-2xl bg-ink-800/90 border border-ink-700 text-sm inline-flex items-center gap-1.5"><Flag size={16} /> Finalizar</button>
+          <div className="flex gap-2">
+            <button onClick={() => setFinishing(true)} aria-label="Voltar" className="h-11 pl-2.5 pr-3.5 rounded-full bg-ink-800/90 border border-ink-700 text-sm inline-flex items-center gap-1"><ArrowLeft size={18} /> Voltar</button>
+            <button onClick={() => setFinishing(true)} className="h-11 px-3.5 rounded-full bg-ink-800/90 border border-ink-700 text-sm inline-flex items-center gap-1.5"><Flag size={16} /> Finalizar</button>
+          </div>
           <div className="text-right">
             <Label>Tempo de treino</Label>
             <div className="num font-display text-4xl font-bold leading-none text-lime">{fmtClock(elapsed)}</div>
@@ -196,6 +203,7 @@ export default function WorkoutSession() {
           <p className="text-ink-300 text-sm">{doneSets} de {totalSets} séries registradas em {fmtDuration(elapsed)}. Volume até agora: {fmtKg(sessionVolume(s.entries))}.</p>
           <Button size="lg" onClick={finish}><Check size={18} /> Salvar no histórico</Button>
           <Button variant="ghost" onClick={() => setFinishing(false)}>Continuar treinando</Button>
+          <p className="text-xs text-ink-500 text-center">Para sair e voltar ao Início, salve ou descarte a sessão.</p>
           <Button variant="danger" onClick={discard}><X size={16} /> Descartar sessão</Button>
         </div>
       </Sheet>
