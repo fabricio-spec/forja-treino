@@ -1,0 +1,12 @@
+{
+  "name": "Forja Treino",
+  "short_name": "Forja",
+  "description": "Treinos com Tri-set, cronômetro, biblioteca de exercícios, plano nutricional e evolução.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090b",
+  "theme_color": "#07090b",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

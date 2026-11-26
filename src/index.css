@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; background: #07090b; }
+html, body, #root { height: 100%; }
+body { margin: 0; background: #07090b; color: #eef2f5; font-family: Inter, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+.num { font-variant-numeric: tabular-nums; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; }
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input, select, textarea { font-size: 16px; }
+:focus-visible { outline: 2px solid #c6ff3d; outline-offset: 2px; }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 #c6ff3d88; } 100% { box-shadow: 0 0 0 28px #c6ff3d00; } }
+.ring-pulse { animation: pulse-ring 1s ease-out infinite; }
+@keyframes rise { from { transform: translateY(16px); opacity: .6; } to { transform: none; opacity: 1; } }
+.rise { animation: rise .22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .ring-pulse, .rise { animation: none; } }
