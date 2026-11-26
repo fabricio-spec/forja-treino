@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import Workouts from './screens/Workouts';
 import Home from './screens/Home';
+import Toast from './components/Toast';
 import Library from './screens/Library';
 import Nutrition from './screens/Nutrition';
 import Progress from './screens/Progress';
@@ -27,14 +28,15 @@ export default function App() {
 
   const due = workouts.some((w) => { const s = periodStatus(w, snoozes); return s.level === 'due' && !s.snoozed; });
 
-  if (showOnboarding) return <Onboarding onDone={(choice) => {
+  if (showOnboarding) return <><Toast /><Onboarding onDone={(choice) => {
     setShowOnboarding(false);
     if (choice === 'build') { removeSampleWorkouts(); go('treinos'); setEditing('new'); }
-  }} />;
-  if (activeSession) return <WorkoutSession />;
+  }} /></>;
+  if (activeSession) return <><Toast /><WorkoutSession /></>;
 
   return (
     <div className="min-h-full bg-ink-950 text-ink-100">
+      <Toast />
       <main className="max-w-lg mx-auto pb-28">
         {tab === 'inicio' && <Home onEdit={setEditing} />}
         {tab === 'treinos' && <Workouts onEdit={setEditing} />}

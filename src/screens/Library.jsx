@@ -7,6 +7,7 @@ import { Button, Field, Hero, Label, Pill, Select, Sheet } from '../components/u
 import YouTubeEmbed from '../components/YouTubeEmbed';
 import { demoFrames } from '../lib/demos';
 import { uid, youtubeId, isValidMediaUrl } from '../lib/utils';
+import { toast } from '../lib/toast';
 
 export default function Library({ onNewWorkoutWith, onEdit }) {
   const { exercises, addExercise, updateExercise, deleteExercise, workouts, upsertWorkout } = useStore();
@@ -68,7 +69,7 @@ export default function Library({ onNewWorkoutWith, onEdit }) {
 
       <Sheet open={!!current} onClose={() => setOpen(null)} title={current?.name ?? ''}>
         {current && <>
-          <AddToWorkout ex={current} workouts={workouts} onAdd={(w) => { upsertWorkout({ ...w, sample: false, blocks: [...w.blocks, { id: uid('blk'), type: 'single', rest: 60, items: [{ exerciseId: current.id, sets: 3, reps: 12, load: 10 }] }] }); setOpen(null); onEdit(w.id); }}
+          <AddToWorkout ex={current} workouts={workouts} onAdd={(w) => { upsertWorkout({ ...w, sample: false, blocks: [...w.blocks, { id: uid('blk'), type: 'single', rest: 60, items: [{ exerciseId: current.id, sets: 3, reps: 12, load: 10 }] }] }); setOpen(null); toast(`${current.name} adicionado ao ${w.name}!`); onEdit(w.id); }}
             onNew={() => { setOpen(null); onNewWorkoutWith(current.id); }} />
           <ExerciseDetail ex={current} onSave={updateExercise} onDelete={() => { deleteExercise(current.id); setOpen(null); }} />
         </>}

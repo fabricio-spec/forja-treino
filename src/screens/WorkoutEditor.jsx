@@ -4,6 +4,7 @@ import { useStore } from '../lib/store';
 import { Button, Field, Label, Sheet, Stepper } from '../components/ui';
 import ExercisePicker from '../components/ExercisePicker';
 import { uid, circuitName } from '../lib/utils';
+import { toast } from '../lib/toast';
 
 const MAX_IN_CIRCUIT = 6;
 const newItem = (exerciseId, sets = 3) => ({ exerciseId, sets, reps: 12, load: 10 });
@@ -16,8 +17,9 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
     blocks: seedExercise ? [{ id: uid('blk'), type: 'single', rest: 60, items: [newItem(seedExercise, 3)] }] : [],
   });
   const [confirmDel, setConfirmDel] = useState(false);
-  // picker: { bi, ii } troca um exercício; { bi, ii: null } adiciona ao bloco; { newBlock: n } cria bloco
+  // picker: { mode: 'swap', bi, ii } | { mode: 'add', bi } | { mode: 'new', n }
   const [picker, setPicker] = useState(null);
+  const [confirm, setConfirm] = useState(null);
   const [help, setHelp] = useState(false);
 
   const setBlock = (bi, patch) => setW((x) => ({ ...x, blocks: x.blocks.map((b, i) => (i === bi ? { ...b, ...patch } : b)) }));
@@ -33,36 +35,49 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
 
   const onPick = (exId) => {
     if (!picker) return;
-    if (picker.newBlock) {
-      const n = picker.newBlock;
-      const block = n === 1
-        ? { id: uid('blk'), type: 'single', rest: 60, items: [newItem(exId, 3)] }
-        : { id: uid('blk'), type: 'triset', label: '', rest: 90, sets: 4, items: [newItem(exId, 4)] , want: n };
-      setW((x) => ({ ...x, blocks: [...x.blocks, block] }));
-      // circuito: abre o seletor de novo até completar o número desejado
-      if (n > 1) setTimeout(() => setPicker({ bi: w.blocks.length, ii: null }), 60);
+    const name = exById(exId)?.name ?? 'Exercício';
+    if (picker.mode === 'swap') {
+      setItem(picker.bi, picker.ii, { exerciseId: exId });
+      setPicker(null);
+      toast(`Trocado por ${name}`);
       return;
     }
-    if (picker.ii == null) {
-      setW((x) => ({ ...x, blocks: x.blocks.map((b, i) => {
-        if (i !== picker.bi) return b;
-        const nb = { ...b, type: 'triset', sets: b.sets ?? b.items[0].sets, label: b.label ?? '', items: [...b.items, newItem(exId, b.sets ?? b.items[0].sets)] };
-        return nb;
-      }) }));
-      const b = w.blocks[picker.bi];
-      const count = (b?.items.length ?? 0) + 1;
-      if (b?.want && count < b.want) setTimeout(() => setPicker({ bi: picker.bi, ii: null }), 60);
-      else if (b?.want) setBlock(picker.bi, { want: undefined });
-    } else setItem(picker.bi, picker.ii, { exerciseId: exId });
+    let bi = picker.bi, count, isCircuit, target = picker.target;
+    if (picker.mode === 'new') {
+      const n = picker.n;
+      const block = n === 1
+        ? { id: uid('blk'), type: 'single', rest: 60, items: [newItem(exId, 3)] }
+        : { id: uid('blk'), type: 'triset', label: '', rest: 90, sets: 4, items: [newItem(exId, 4)] };
+      bi = w.blocks.length;
+      setW((x) => ({ ...x, blocks: [...x.blocks, block] }));
+      count = 1; isCircuit = n > 1; target = n;
+      setPicker(n > 1 ? { mode: 'add', bi, target: n } : { mode: 'new', n: 1, lastBi: bi });
+    } else {
+      const b = w.blocks[bi];
+      setW((x) => ({ ...x, blocks: x.blocks.map((blk, i) => i !== bi ? blk : { ...blk, type: 'triset', sets: blk.sets ?? blk.items[0].sets, label: blk.label ?? '', items: [...blk.items, newItem(exId, blk.sets ?? blk.items[0].sets)] }) }));
+      count = (b?.items.length ?? 0) + 1; isCircuit = true;
+    }
+    const kind = isCircuit ? circuitName(count) : 'Exercício isolado';
+    const left = target ? target - count : 0;
+    const missing = left > 0 ? ` · ${left === 1 ? 'falta 1' : `faltam ${left}`} para completar ${circuitName(target) === 'Série gigante' ? 'a série gigante' : `o ${circuitName(target)}`}` : '';
+    setConfirm({ name, detail: isCircuit ? `${kind} com ${count} exercício${count > 1 ? 's' : ''}${missing}` : 'Exercício isolado · 3 séries de 12', canAddMore: !isCircuit || count < MAX_IN_CIRCUIT });
   };
+  const closePicker = () => { setPicker(null); setConfirm(null); };
+  const doneSeries = () => {
+    closePicker();
+    if (w.name.trim()) { upsertWorkout(clean(w)); toast('Série salva na ficha!'); }
+    else toast('Série adicionada. Dê um nome à ficha para salvar.', 'info');
+  };
+  const pickerSelected = picker && picker.mode === 'add' ? (w.blocks[picker.bi]?.items ?? []).map((i) => i.exerciseId) : [];
 
   const clean = (x) => ({ ...x, sample: false, focus: x.focus.trim() || 'Treino', blocks: x.blocks.map(({ want, ...b }) => b) });
   const valid = w.name.trim() && w.blocks.length > 0;
-  const save = () => { if (!valid) return; upsertWorkout(clean(w)); onClose(); };
-  const pickerTarget = picker && !picker.newBlock && picker.ii != null ? w.blocks[picker.bi]?.items[picker.ii]?.exerciseId : null;
+  const save = () => { if (!valid) return; upsertWorkout(clean(w)); toast(`${w.name.trim()} salvo!`); onClose(); };
+  const pickerTarget = picker?.mode === 'swap' ? w.blocks[picker.bi]?.items[picker.ii]?.exerciseId : null;
   const pickerGroup = pickerTarget ? exById(pickerTarget)?.group : undefined;
-  const pickerTitle = picker?.newBlock ? (picker.newBlock === 1 ? 'Exercício isolado' : `1º exercício do ${circuitName(picker.newBlock)}`)
-    : picker?.ii == null && picker ? `Adicionar ao circuito (${(w.blocks[picker.bi]?.items.length ?? 0) + 1}º)` : 'Trocar exercício';
+  const pickerTitle = !picker ? '' : picker.mode === 'swap' ? 'Trocar exercício'
+    : picker.mode === 'new' ? (picker.n === 1 ? 'Exercício isolado' : `Montar ${circuitName(picker.n)}`)
+    : `${circuitName((w.blocks[picker.bi]?.items.length ?? 0) + 1)}: escolha o ${(w.blocks[picker.bi]?.items.length ?? 0) + 1}º`;
 
   return (
     <Sheet open onClose={onClose} title={existing ? 'Editar ficha' : 'Montar ficha'} full>
@@ -121,7 +136,7 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
                   <li key={ii} className={`flex flex-col gap-2 ${circuit ? 'rounded-2xl bg-ink-900/80 border border-ink-800 p-2.5' : ''}`}>
                     <div className="flex items-center gap-2">
                       {circuit && <span className="font-display text-xl font-bold text-volt w-5 text-center shrink-0">{ii + 1}</span>}
-                      <button onClick={() => setPicker({ bi, ii })} className="flex-1 min-w-0 h-11 rounded-xl bg-ink-850 border border-ink-700 px-3 flex items-center justify-between gap-2 text-left">
+                      <button onClick={() => setPicker({ mode: 'swap', bi, ii })} className="flex-1 min-w-0 h-11 rounded-xl bg-ink-850 border border-ink-700 px-3 flex items-center justify-between gap-2 text-left">
                         <span className="truncate text-ink-100">{exById(it.exerciseId)?.name ?? 'Escolher exercício'}</span>
                         <span className="text-[11px] text-ink-400 shrink-0">{exById(it.exerciseId)?.group}</span>
                       </button>
@@ -143,7 +158,7 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
 
               {!circuit && <Stepper id={`rest-${b.id}`} label="Descanso entre séries" value={b.rest} step={15} suffix="s" onChange={(v) => setBlock(bi, { rest: v })} />}
               {n < MAX_IN_CIRCUIT && (
-                <Button variant="ghost" size="sm" onClick={() => setPicker({ bi, ii: null })} className="!border-volt/40 !text-volt">
+                <Button variant="ghost" size="sm" onClick={() => setPicker({ mode: 'add', bi })} className="!border-volt/40 !text-volt">
                   <Plus size={15} /> {circuit ? `Adicionar ${n + 1}º exercício` : 'Transformar em circuito (adicionar exercício)'}
                 </Button>
               )}
@@ -156,7 +171,7 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
           <Label>Adicionar bloco</Label>
           <div className="grid grid-cols-3 gap-2">
             {[[3, 'Tri-set', '3 exercícios'], [4, 'Série gigante', '4 exercícios'], [1, 'Isolado', '1 exercício']].map(([n, t, sub]) => (
-              <button key={n} onClick={() => setPicker({ newBlock: n })}
+              <button key={n} onClick={() => setPicker({ mode: 'new', n })}
                 className={`rounded-2xl border p-3 text-left flex flex-col gap-1 ${n > 1 ? 'border-volt/40 bg-volt-soft/20' : 'border-ink-700 bg-ink-850'}`}>
                 {n > 1 ? <Repeat size={18} className="text-volt" /> : <Dumbbell size={18} className="text-lime" />}
                 <span className="font-semibold text-sm text-ink-100 leading-tight">{t}</span>
@@ -174,8 +189,9 @@ export default function WorkoutEditor({ id, onClose, seedExercise }) {
         </div>
       </div>
 
-      <ExercisePicker key={JSON.stringify(picker)} open={!!picker} onClose={() => setPicker(null)} onPick={onPick} exercises={exercises}
-        current={pickerTarget} initialGroup={pickerGroup} title={pickerTitle} />
+      <ExercisePicker key={picker ? 'open' : 'closed'} open={!!picker} onClose={closePicker} onPick={onPick} exercises={exercises}
+        current={pickerTarget} initialGroup={pickerGroup} title={pickerTitle} selectedIds={pickerSelected}
+        confirm={confirm} onMore={() => setConfirm(null)} onDone={doneSeries} />
     </Sheet>
   );
 }
