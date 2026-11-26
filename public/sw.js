@@ -1,5 +1,5 @@
 // Service worker: rede primeiro (sempre a versão mais nova), cache como reserva para uso offline na academia.
-const CACHE = 'forja-v3';
+const CACHE = 'forja-v4';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

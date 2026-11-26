@@ -3,6 +3,7 @@ import { youtubeId, ytSearchUrl } from '../lib/utils';
 import { refLink } from '../lib/seed';
 import DemoPlayer from './DemoPlayer';
 import { demoFrames } from '../lib/demos';
+import { motionGif } from '../lib/motion';
 
 function RefLink({ id }) {
   const href = refLink(id);
@@ -28,11 +29,11 @@ export default function YouTubeEmbed({ url, title, exerciseId }) {
     );
   }
   const id = youtubeId(url);
-  if (!id && demoFrames(exerciseId)) {
+  if (!id && (motionGif(exerciseId) || demoFrames(exerciseId))) {
     return (
       <div className="flex flex-col gap-2">
         <DemoPlayer exerciseId={exerciseId} title={title} />
-        <p className="text-[11px] text-ink-500">Toque para pausar. Quer um vídeo? Na Biblioteca, cole um link do YouTube ou de um GIF neste exercício e ele passa a tocar aqui.</p>
+        <p className="text-[11px] text-ink-500">Prefere um vídeo seu? Na Biblioteca, cole um link do YouTube ou de um GIF neste exercício e ele passa a tocar aqui.</p>
       </div>
     );
   }

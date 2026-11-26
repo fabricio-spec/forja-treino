@@ -4,6 +4,7 @@ import { useStore } from '../lib/store';
 import { ACTIVE_PROFILE, listProfiles, createProfile, switchProfile, deleteProfile } from '../lib/storage';
 import { Button, Field, Label, Sheet } from './ui';
 import ProfileForm from './ProfileForm';
+import BackupSection from './BackupSection';
 
 export const initials = (name) => (name || '').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -71,6 +72,8 @@ export default function ProfileSheet({ open, onClose }) {
             </form>
           ) : <Button variant="ghost" onClick={() => setAdding(true)}><Plus size={16} /> Novo perfil (novo cadastro)</Button>}
         </section>
+
+        <BackupSection />
 
         <section className="flex flex-col gap-2">
           <Label>Recomeçar</Label>
