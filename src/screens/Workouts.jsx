@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { AlarmClock, CalendarDays, ChevronRight, Flame, Layers, Pencil, Play, Plus, RefreshCw, Sparkles, TriangleAlert, Repeat } from 'lucide-react';
+import { Copy, Hammer, AlarmClock, CalendarDays, ChevronRight, Flame, Layers, Pencil, Play, Plus, RefreshCw, Sparkles, TriangleAlert, Repeat } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { BG } from '../lib/images';
 import { Button, Card, Hero, Label, Pill, Sheet } from '../components/ui';
 import { periodStatus, swapSuggestions, STIMULUS_TIPS, PERIOD_DAYS } from '../lib/periodization';
 import { buildSession, lastLoadsFrom } from '../lib/session';
+import { isSampleWorkout } from '../lib/seed';
 import { fmtDate, fmtKg, weekStart, DAY, circuitName } from '../lib/utils';
 import { unlockAudio, keepAwake } from '../lib/audio';
 import InstallBanner from '../components/InstallBanner';
 import ProfileSheet, { ProfileButton } from '../components/ProfileSheet';
 
 export default function Workouts({ onEdit }) {
-  const { workouts, sessions, snoozes, setSnoozes, exById, exercises, upsertWorkout, setActiveSession, profile } = useStore();
+  const { workouts, sessions, snoozes, setSnoozes, exById, exercises, upsertWorkout, setActiveSession, profile, duplicateWorkout, removeSampleWorkouts } = useStore();
+  const [confirmSamples, setConfirmSamples] = useState(false);
+  const hasSamples = workouts.some(isSampleWorkout);
   const [renew, setRenew] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -53,12 +56,27 @@ export default function Workouts({ onEdit }) {
           </button>
         ))}
 
+        <button onClick={() => onEdit('new')} className="text-left rounded-3xl border-2 border-lime/70 bg-gradient-to-br from-lime-soft to-ink-900 p-4 flex items-center gap-4 active:scale-[.99] transition">
+          <span className="w-12 h-12 shrink-0 rounded-2xl bg-lime text-ink-950 grid place-items-center"><Hammer size={24} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-2xl font-bold uppercase leading-tight">Montar meu treino</span>
+            <span className="block text-sm text-ink-300">Escolha exercícios da biblioteca e monte séries, Tri-sets ou séries gigantes.</span>
+          </span>
+          <Plus className="text-lime shrink-0" />
+        </button>
+
         <div className="flex items-center justify-between mt-1">
           <Label>Fichas ({workouts.length})</Label>
-          <Button size="sm" variant="outline" onClick={() => onEdit('new')}><Plus size={16} /> Nova ficha</Button>
+          {hasSamples && <button className="text-xs text-ink-400 underline underline-offset-2" onClick={() => setConfirmSamples(true)}>Remover fichas de exemplo</button>}
         </div>
+        {confirmSamples && (
+          <div className="rounded-2xl border border-danger/40 bg-danger/10 p-3 flex flex-col gap-2">
+            <p className="text-sm text-ink-200">Remove as fichas de exemplo e o histórico de exemplo. Suas fichas e treinos reais ficam.</p>
+            <div className="grid grid-cols-2 gap-2"><Button size="sm" variant="ghost" onClick={() => setConfirmSamples(false)}>Cancelar</Button><Button size="sm" variant="danger" onClick={() => { removeSampleWorkouts(); setConfirmSamples(false); }}>Remover</Button></div>
+          </div>
+        )}
 
-        {workouts.map((w) => <WorkoutCard key={w.id} w={w} st={periodStatus(w, snoozes)} exById={exById} onStart={() => start(w)} onEdit={() => onEdit(w.id)} onRenew={() => setRenew(w)}
+        {workouts.map((w) => <WorkoutCard key={w.id} w={w} st={periodStatus(w, snoozes)} exById={exById} onStart={() => start(w)} onEdit={() => onEdit(w.id)} onRenew={() => setRenew(w)} onDuplicate={() => onEdit(duplicateWorkout(w))}
           last={sessions.find((s) => s.workoutId === w.id)} />)}
 
         {!workouts.length && (
@@ -112,7 +130,7 @@ function Stat({ label, value, unit, icon }) {
   );
 }
 
-function WorkoutCard({ w, st, exById, onStart, onEdit, onRenew, last }) {
+function WorkoutCard({ w, st, exById, onStart, onEdit, onRenew, onDuplicate, last }) {
   const exCount = w.blocks.reduce((t, b) => t + b.items.length, 0);
   const tri = w.blocks.filter((b) => b.type === 'triset').length;
   const pct = Math.min(100, (st.age / PERIOD_DAYS) * 100);
@@ -125,13 +143,17 @@ function WorkoutCard({ w, st, exById, onStart, onEdit, onRenew, last }) {
           <div className={`font-display text-sm font-bold uppercase tracking-[.2em] ${accent}`}>{w.name}</div>
           <div className="font-display text-[28px] leading-tight font-bold uppercase text-ink-100">{w.focus}</div>
           <div className="flex flex-wrap gap-1.5 mt-2">
+            {isSampleWorkout(w) && <Pill>exemplo</Pill>}
             <Pill>{exCount} exercícios</Pill>
             {tri > 0 && <Pill tone="volt"><Repeat size={12} /> {tri} circuito{tri > 1 ? 's' : ''}</Pill>}
             {st.level === 'due' && <Pill tone="warn"><AlarmClock size={12} /> Renovar</Pill>}
             {st.level === 'soon' && <Pill tone="warn">Renovar em {st.left} d</Pill>}
           </div>
         </div>
-        <button onClick={onEdit} aria-label={`Editar ${w.name}`} className="w-10 h-10 shrink-0 rounded-full bg-ink-800 grid place-items-center text-ink-300"><Pencil size={17} /></button>
+        <span className="flex gap-1.5 shrink-0">
+          <button onClick={onDuplicate} aria-label={`Duplicar ${w.name}`} title="Duplicar e personalizar" className="w-10 h-10 rounded-full bg-ink-800 grid place-items-center text-ink-300"><Copy size={16} /></button>
+          <button onClick={onEdit} aria-label={`Editar ${w.name}`} title="Editar" className="w-10 h-10 rounded-full bg-ink-800 grid place-items-center text-ink-300"><Pencil size={17} /></button>
+        </span>
       </div>
 
       <ol className="flex flex-col gap-1.5">

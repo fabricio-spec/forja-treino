@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from 'react';
 import { usePersistentState, clearAll, load, save, SCHEMA_VERSION, ACTIVE_PROFILE, renameProfile } from './storage';
-import { EXERCISES, seedWorkouts, seedSessions } from './seed';
+import { EXERCISES, seedWorkouts, seedSessions, isSampleWorkout } from './seed';
+import { uid } from './utils';
 
 /*
   Arquitetura de dados (localStorage, prefixo "forja:")
@@ -56,6 +57,8 @@ export function StoreProvider({ children }) {
     updateExercise: (e) => setExercises((all) => all.map((x) => (x.id === e.id ? e : x))),
     deleteExercise: (id) => setExercises((all) => all.filter((x) => x.id !== id)),
     clearSamples: () => setSessions((all) => all.filter((s) => !s.sample)),
+    removeSampleWorkouts: () => { setWorkouts((all) => all.filter((w) => !isSampleWorkout(w))); setSessions((all) => all.filter((s) => !s.sample)); },
+    duplicateWorkout: (w) => { const copy = { ...structuredClone(w), id: uid('w'), name: `${w.name} (cópia)`, sample: false, createdAt: new Date().toISOString(), blocks: w.blocks.map((b) => ({ ...structuredClone(b), id: uid('blk') })) }; setWorkouts((all) => [...all, copy]); return copy.id; },
     resetAll: () => { clearAll(); location.reload(); },
   }), [profile, exercises, workouts, sessions, activeSession, snoozes, diet]);
 

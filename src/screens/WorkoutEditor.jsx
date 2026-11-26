@@ -8,11 +8,12 @@ import { uid, circuitName } from '../lib/utils';
 const MAX_IN_CIRCUIT = 6;
 const newItem = (exerciseId, sets = 3) => ({ exerciseId, sets, reps: 12, load: 10 });
 
-export default function WorkoutEditor({ id, onClose }) {
+export default function WorkoutEditor({ id, onClose, seedExercise }) {
   const { workouts, exercises, exById, upsertWorkout, deleteWorkout } = useStore();
   const existing = workouts.find((w) => w.id === id);
   const [w, setW] = useState(() => existing ? structuredClone(existing) : {
-    id: uid('w'), name: `Treino ${String.fromCharCode(65 + workouts.length)}`, focus: '', color: 'lime', createdAt: new Date().toISOString(), blocks: [],
+    id: uid('w'), name: `Treino ${String.fromCharCode(65 + workouts.length)}`, focus: '', color: 'lime', createdAt: new Date().toISOString(),
+    blocks: seedExercise ? [{ id: uid('blk'), type: 'single', rest: 60, items: [newItem(seedExercise, 3)] }] : [],
   });
   const [confirmDel, setConfirmDel] = useState(false);
   // picker: { bi, ii } troca um exercício; { bi, ii: null } adiciona ao bloco; { newBlock: n } cria bloco
@@ -55,7 +56,7 @@ export default function WorkoutEditor({ id, onClose }) {
     } else setItem(picker.bi, picker.ii, { exerciseId: exId });
   };
 
-  const clean = (x) => ({ ...x, focus: x.focus.trim() || 'Treino', blocks: x.blocks.map(({ want, ...b }) => b) });
+  const clean = (x) => ({ ...x, sample: false, focus: x.focus.trim() || 'Treino', blocks: x.blocks.map(({ want, ...b }) => b) });
   const valid = w.name.trim() && w.blocks.length > 0;
   const save = () => { if (!valid) return; upsertWorkout(clean(w)); onClose(); };
   const pickerTarget = picker && !picker.newBlock && picker.ii != null ? w.blocks[picker.bi]?.items[picker.ii]?.exerciseId : null;

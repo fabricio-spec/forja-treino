@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, Link2, Plus, Search, Trash2, Youtube } from 'lucide-react';
+import { ChevronRight, Link2, ListPlus, Plus, Search, Trash2, Youtube } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { GROUPS } from '../lib/seed';
 import { BG } from '../lib/images';
@@ -8,8 +8,8 @@ import YouTubeEmbed from '../components/YouTubeEmbed';
 import { demoFrames } from '../lib/demos';
 import { uid, youtubeId, isValidMediaUrl } from '../lib/utils';
 
-export default function Library() {
-  const { exercises, addExercise, updateExercise, deleteExercise } = useStore();
+export default function Library({ onNewWorkoutWith, onEdit }) {
+  const { exercises, addExercise, updateExercise, deleteExercise, workouts, upsertWorkout } = useStore();
   const [q, setQ] = useState('');
   const [group, setGroup] = useState('Todos');
   const [open, setOpen] = useState(null);
@@ -67,7 +67,11 @@ export default function Library() {
       </div>
 
       <Sheet open={!!current} onClose={() => setOpen(null)} title={current?.name ?? ''}>
-        {current && <ExerciseDetail ex={current} onSave={updateExercise} onDelete={() => { deleteExercise(current.id); setOpen(null); }} />}
+        {current && <>
+          <AddToWorkout ex={current} workouts={workouts} onAdd={(w) => { upsertWorkout({ ...w, sample: false, blocks: [...w.blocks, { id: uid('blk'), type: 'single', rest: 60, items: [{ exerciseId: current.id, sets: 3, reps: 12, load: 10 }] }] }); setOpen(null); onEdit(w.id); }}
+            onNew={() => { setOpen(null); onNewWorkoutWith(current.id); }} />
+          <ExerciseDetail ex={current} onSave={updateExercise} onDelete={() => { deleteExercise(current.id); setOpen(null); }} />
+        </>}
       </Sheet>
 
       <Sheet open={creating} onClose={() => setCreating(false)} title="Novo exercício">
@@ -115,5 +119,22 @@ function NewExercise({ onCreate, defaultGroup }) {
       <Field id="nx-url" label="Link do YouTube ou GIF (opcional)" value={f.videoUrl} onChange={(e) => setF({ ...f, videoUrl: e.target.value })} placeholder="https://youtu.be/..." inputMode="url" />
       <Button size="lg" type="submit" disabled={!ok}><Plus size={18} /> Adicionar à biblioteca</Button>
     </form>
+  );
+}
+
+function AddToWorkout({ ex, workouts, onAdd, onNew }) {
+  const [open, setOpen] = useState(false);
+  if (!open) return <Button className="w-full mb-4" onClick={() => setOpen(true)}><ListPlus size={18} /> Adicionar a uma ficha</Button>;
+  return (
+    <div className="mb-4 rounded-3xl border border-lime/40 bg-lime-soft/20 p-3 flex flex-col gap-2">
+      <Label>Adicionar “{ex.name}” em</Label>
+      {workouts.map((w) => (
+        <button key={w.id} onClick={() => onAdd(w)} className="h-12 px-4 rounded-2xl bg-ink-850 border border-ink-700 flex items-center justify-between gap-2 text-left">
+          <span className="truncate"><b className="text-ink-100">{w.name}</b> <span className="text-ink-400 text-sm">· {w.focus}</span></span><Plus size={16} className="text-lime shrink-0" />
+        </button>
+      ))}
+      <Button variant="outline" onClick={onNew}><Plus size={16} /> Nova ficha com este exercício</Button>
+      <Button variant="plain" size="sm" onClick={() => setOpen(false)}>Cancelar</Button>
+    </div>
   );
 }

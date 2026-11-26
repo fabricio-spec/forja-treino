@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Hammer, LayoutList } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { BG } from '../lib/images';
 import { Button, Label } from '../components/ui';
@@ -9,7 +9,7 @@ export default function Onboarding({ onDone }) {
   const { profile, setProfile } = useStore();
   const [p, setP] = useState(profile);
   const [step, setStep] = useState(0);
-  const finish = (save) => { setProfile({ ...(save ? p : profile), onboarded: true }); onDone(); };
+  const finish = (save, choice) => { setProfile({ ...(save ? p : profile), onboarded: true }); onDone(choice); };
 
   if (step === 0) return (
     <div className="relative min-h-full bg-ink-950 flex flex-col justify-end">
@@ -25,6 +25,32 @@ export default function Onboarding({ onDone }) {
     </div>
   );
 
+  if (step === 2) return (
+    <div className="min-h-full bg-ink-950">
+      <div className="max-w-lg mx-auto px-5 pt-8 pb-10 flex flex-col gap-5">
+        <div>
+          <Label className="text-lime">Seus treinos</Label>
+          <h1 className="font-display text-4xl font-extrabold uppercase mt-1">Como quer começar?</h1>
+          <p className="text-ink-400 mt-1 text-sm">Você pode mudar isso a qualquer momento na aba Meus Treinos.</p>
+        </div>
+        <button onClick={() => finish(true, 'build')} className="text-left rounded-3xl border-2 border-lime bg-lime-soft/40 p-5 flex gap-4 items-start">
+          <span className="w-12 h-12 shrink-0 rounded-2xl bg-lime text-ink-950 grid place-items-center"><Hammer size={24} /></span>
+          <span>
+            <span className="block font-display text-2xl font-bold uppercase">Montar meu próprio treino</span>
+            <span className="block text-sm text-ink-300 mt-1">Comece do zero: crie suas fichas, escolha os exercícios da biblioteca e monte Tri-sets ou séries gigantes com rodadas e descanso do seu jeito.</span>
+          </span>
+        </button>
+        <button onClick={() => finish(true, 'examples')} className="text-left rounded-3xl border border-ink-700 bg-ink-900 p-5 flex gap-4 items-start">
+          <span className="w-12 h-12 shrink-0 rounded-2xl bg-ink-800 text-volt grid place-items-center"><LayoutList size={24} /></span>
+          <span>
+            <span className="block font-display text-2xl font-bold uppercase">Partir das fichas prontas</span>
+            <span className="block text-sm text-ink-300 mt-1">Use as fichas de exemplo (Treinos A, B e C) e edite, duplique ou apague o que quiser.</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-full bg-ink-950">
       <div className="max-w-lg mx-auto px-5 pt-8 pb-10 flex flex-col gap-6">
@@ -34,7 +60,7 @@ export default function Onboarding({ onDone }) {
           <p className="text-ink-400 mt-1 text-sm">Usamos esses dados para estimar seu gasto calórico e os macros. Dá para mudar depois na aba Nutrição.</p>
         </div>
         <ProfileForm value={p} onChange={setP} />
-        <Button size="lg" onClick={() => finish(true)}>Ver meu plano <ArrowRight size={20} /></Button>
+        <Button size="lg" onClick={() => setStep(2)}>Continuar <ArrowRight size={20} /></Button>
       </div>
     </div>
   );

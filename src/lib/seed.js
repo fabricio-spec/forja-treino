@@ -56,7 +56,7 @@ export function seedWorkouts() {
   const now = Date.now();
   return [
     {
-      id: 'w_peito_triset',
+      id: 'w_peito_triset', sample: true,
       name: 'Treino A',
       focus: 'Peito e Tríceps',
       color: 'lime',
@@ -69,7 +69,7 @@ export function seedWorkouts() {
       ],
     },
     {
-      id: 'w_costas_antigo',
+      id: 'w_costas_antigo', sample: true,
       name: 'Treino B',
       focus: 'Costas e Bíceps',
       color: 'volt',
@@ -84,7 +84,7 @@ export function seedWorkouts() {
       ],
     },
     {
-      id: 'w_pernas_circuito',
+      id: 'w_pernas_circuito', sample: true,
       name: 'Treino C',
       focus: 'Pernas e Ombros (definição)',
       color: 'lime',
@@ -141,3 +141,6 @@ export const REF_LINKS = {
   'mergulho-banco': 'triceps/mergulho-de-triceps-no-banco', 'abdominal-supra': 'abdominais/crunch',
 };
 export const refLink = (id) => (REF_LINKS[id] ? `${GK}${REF_LINKS[id]}/` : null);
+
+export const SAMPLE_WORKOUT_IDS = ['w_peito_triset', 'w_costas_antigo', 'w_pernas_circuito'];
+export const isSampleWorkout = (w) => !!w.sample || (w.sample !== false && SAMPLE_WORKOUT_IDS.includes(w.id));
